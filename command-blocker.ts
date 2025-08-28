@@ -301,59 +301,19 @@ function checkReadOnlyFileEdit(filePath: string): void {
   if (typeof filePath !== "string") return;
   if (!filePath) return;
 
-  const fileName: string = filePath.split("/").pop() || "";
+  const fileName: string =
+    filePath.split(/[/\\]/).pop()?.split("?")[0]?.split("#")[0] || "";
 
   if (READ_ONLY_FILES[fileName]) {
     throw new Error(READ_ONLY_FILES[fileName]);
   }
 }
 
-function checkNixFileContent(filePath: string, content: string): void {
-  if (typeof filePath !== "string" || typeof content !== "string") return;
-  if (!filePath || !content) return;
 
-  const fileName: string = filePath.split("/").pop() || "";
-  const isNixFile: boolean =
-    fileName.endsWith(".nix") ||
-    filePath.includes("flake.nix") ||
-    fileName === "flake.nix";
 
-  if (isNixFile && content.includes("npm install")) {
-    throw new Error(
-      "`npm install` has no internet access during build in Nix sandbox"
-    );
-  }
-}
 
-function checkTypeScriptAnyType(filePath: string, content: string): void {
-  if (typeof filePath !== "string" || typeof content !== "string") return;
-  if (!filePath || !content) return;
 
-  const fileName: string = filePath.split("/").pop() || "";
-  const isTypeScriptFile: boolean =
-    fileName.endsWith(".ts") || fileName.endsWith(".tsx");
 
-  if (isTypeScriptFile) {
-    const anyTypePatterns: RegExp[] = [
-      /:\s*any\b/, // : any
-      /:\s*any\s*[;\|\)]/, // : any; or : any | or : any)
-      /:\s*any\[\]/, // : any[]
-      /<any>/, // <any>
-      /Array<any>/, // Array<any>
-      /Record<.*,\s*any>/, // Record<string, any>
-      /\bas\s+any\b/, // as any
-      /\(.*:\s*any\)/, // function parameter: any
-    ];
-
-    for (const pattern of anyTypePatterns) {
-      if (pattern.test(content)) {
-        throw new Error(
-          "`any` type annotations are blocked in TypeScript files. Use proper type annotations for better type safety."
-        );
-      }
-    }
-  }
-}
 
 export const CommandBlocker: Plugin = async ({
   app,
@@ -368,12 +328,12 @@ export const CommandBlocker: Plugin = async ({
 
         if (input.tool === "edit") {
           const newString = output.args.newString || "";
-          checkNixFileContent(filePath, newString);
-          checkTypeScriptAnyType(filePath, newString);
+
+
         } else if (input.tool === "write") {
           const content = output.args.content || "";
-          checkNixFileContent(filePath, content);
-          checkTypeScriptAnyType(filePath, content);
+
+
         }
       }
 

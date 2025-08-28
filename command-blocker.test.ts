@@ -516,6 +516,24 @@ describe("Command Blocker", () => {
       await expect(
         plugin["tool.execute.before"](input3, output3)
       ).rejects.toThrow();
+
+      const input4 = { tool: "bash" };
+      const output4 = { args: { command: "git checkout file.txt" } };
+      await expect(
+        plugin["tool.execute.before"](input4, output4)
+      ).rejects.toThrow();
+
+      const input5 = { tool: "bash" };
+      const output5 = { args: { command: "git checkout HEAD -- file.txt" } };
+      await expect(
+        plugin["tool.execute.before"](input5, output5)
+      ).rejects.toThrow();
+
+      const input6 = { tool: "bash" };
+      const output6 = { args: { command: "git checkout main" } };
+      await expect(
+        plugin["tool.execute.before"](input6, output6)
+      ).rejects.toThrow();
     });
 
     it("should allow non-git commands", async () => {
@@ -1047,80 +1065,7 @@ describe("Command Blocker", () => {
     });
   });
 
-  describe("checkNixFileContent", () => {
-    let plugin: any;
-    let mockApp: any;
-    let mockClient: any;
-    let mock$: any;
 
-    beforeEach(async () => {
-      mockApp = {};
-      mockClient = {};
-      mock$ = {};
-      plugin = await CommandBlocker({
-        app: mockApp,
-        client: mockClient,
-        $: mock$,
-      });
-    });
-
-    it("should block npm install in nix files", async () => {
-      const input1 = { tool: "edit" };
-      const output1 = {
-        args: { filePath: "flake.nix", newString: "npm install package" },
-      };
-      await expect(
-        plugin["tool.execute.before"](input1, output1)
-      ).rejects.toThrow(
-        "`npm install` has no internet access during build in Nix sandbox"
-      );
-
-      const input2 = { tool: "edit" };
-      const output2 = {
-        args: {
-          filePath: "default.nix",
-          newString: "some content npm install",
-        },
-      };
-      await expect(
-        plugin["tool.execute.before"](input2, output2)
-      ).rejects.toThrow();
-    });
-
-    it("should allow other content in nix files", async () => {
-      const input = { tool: "edit" };
-      const output = {
-        args: { filePath: "flake.nix", newString: "some nix content" },
-      };
-      await expect(
-        plugin["tool.execute.before"](input, output)
-      ).resolves.toBeUndefined();
-    });
-
-    it("should allow npm install in non-nix files", async () => {
-      const input = { tool: "edit" };
-      const output = {
-        args: { filePath: "package.json", newString: "npm install" },
-      };
-      await expect(
-        plugin["tool.execute.before"](input, output)
-      ).resolves.toBeUndefined();
-    });
-
-    it("should handle empty inputs", async () => {
-      const input1 = { tool: "edit" };
-      const output1 = { args: { filePath: "", newString: "content" } };
-      await expect(
-        plugin["tool.execute.before"](input1, output1)
-      ).resolves.toBeUndefined();
-
-      const input2 = { tool: "edit" };
-      const output2 = { args: { filePath: "file.nix", newString: "" } };
-      await expect(
-        plugin["tool.execute.before"](input2, output2)
-      ).resolves.toBeUndefined();
-    });
-  });
 
   describe("checkTypeScriptAnyType", () => {
     let plugin: any;
@@ -1139,16 +1084,14 @@ describe("Command Blocker", () => {
       });
     });
 
-    it("should block any type annotations", async () => {
+    it("should allow any type annotations (temporarily disabled)", async () => {
       const input1 = { tool: "edit" };
       const output1 = {
         args: { filePath: "test.ts", newString: "const x: any = 5;" },
       };
       await expect(
         plugin["tool.execute.before"](input1, output1)
-      ).rejects.toThrow(
-        "`any` type annotations are blocked in TypeScript files. Use proper type annotations for better type safety."
-      );
+      ).resolves.toBeUndefined();
 
       const input2 = { tool: "edit" };
       const output2 = {
@@ -1156,7 +1099,7 @@ describe("Command Blocker", () => {
       };
       await expect(
         plugin["tool.execute.before"](input2, output2)
-      ).rejects.toThrow();
+      ).resolves.toBeUndefined();
 
       const input3 = { tool: "edit" };
       const output3 = {
@@ -1164,7 +1107,7 @@ describe("Command Blocker", () => {
       };
       await expect(
         plugin["tool.execute.before"](input3, output3)
-      ).rejects.toThrow();
+      ).resolves.toBeUndefined();
 
       const input4 = { tool: "edit" };
       const output4 = {
@@ -1175,7 +1118,7 @@ describe("Command Blocker", () => {
       };
       await expect(
         plugin["tool.execute.before"](input4, output4)
-      ).rejects.toThrow();
+      ).resolves.toBeUndefined();
 
       const input5 = { tool: "edit" };
       const output5 = {
@@ -1183,7 +1126,7 @@ describe("Command Blocker", () => {
       };
       await expect(
         plugin["tool.execute.before"](input5, output5)
-      ).rejects.toThrow();
+      ).resolves.toBeUndefined();
     });
 
     it("should allow proper type annotations", async () => {
@@ -1274,24 +1217,9 @@ describe("Command Blocker", () => {
       );
     });
 
-    it("should check file content for nix files", async () => {
-      const plugin = await CommandBlocker({
-        app: mockApp,
-        client: mockClient,
-        $: mock$,
-      });
-      const input = { tool: "edit" };
-      const output = {
-        args: { filePath: "flake.nix", newString: "npm install package" },
-      };
 
-      const hook = (plugin as PluginHook)["tool.execute.before"];
-      await expect(hook(input, output)).rejects.toThrow(
-        "`npm install` has no internet access during build in Nix sandbox"
-      );
-    });
 
-    it("should check file content for TypeScript any types", async () => {
+    it("should allow file content with TypeScript any types (temporarily disabled)", async () => {
       const plugin = await CommandBlocker({
         app: mockApp,
         client: mockClient,
@@ -1304,9 +1232,7 @@ describe("Command Blocker", () => {
 
       await expect(
         plugin["tool.execute.before"](input, output)
-      ).rejects.toThrow(
-        "`any` type annotations are blocked in TypeScript files"
-      );
+      ).resolves.toBeUndefined();
     });
 
     it("should check bash commands", async () => {
