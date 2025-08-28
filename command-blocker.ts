@@ -66,6 +66,13 @@ function checkPythonNodeCommand(command: string): void {
   const isWhichOrWhereis: boolean =
     command.includes("which") || command.includes("whereis");
 
+  // Allow python commands from virtual environments
+  const venvPatterns: RegExp[] = [
+    /^[./\\]*\.venv[/\\]bin[/\\]python\d*$/, // .venv/bin/python, .venv/bin/python3
+    /^[./\\]*venv[/\\]bin[/\\]python\d*$/, // venv/bin/python, venv/bin/python3
+    /^[./\\]*env[/\\]bin[/\\]python\d*$/, // env/bin/python, env/bin/python3
+  ];
+
   for (const blockedCmd of BLOCKED_COMMANDS) {
     if (blockedCmd === "git" || blockedCmd === "nix") continue;
 
@@ -109,29 +116,35 @@ function checkPythonNodeCommand(command: string): void {
 
     // Enhanced pattern matching for complex command structures
     if (!isWhichOrWhereis) {
-      // Check for blocked commands in various contexts
-      const patterns: RegExp[] = [
-        // Direct command anywhere
-        new RegExp(`\\b${blockedCmd}\\b`, "g"),
-        // In command substitution $(...)
-        new RegExp(`\\$\\([^)]*\\b${blockedCmd}\\b[^)]*\\)`, "g"),
-        // In backticks `...`
-        new RegExp(`\`[^\`]*\\b${blockedCmd}\\b[^\`]*\``, "g"),
-        // In quoted strings within commands
-        new RegExp(`["'][^"']*\\b${blockedCmd}\\b[^"']*["']`, "g"),
-        // After operators like &&, ||, ;, |
-        new RegExp(`[;&|]{1,2}\\s*\\b${blockedCmd}\\b`, "g"),
-        // In background execution &
-        new RegExp(`\\b${blockedCmd}\\b\\s*&`, "g"),
-        // With redirection
-        new RegExp(`\\b${blockedCmd}\\b\\s*[<>]`, "g"),
-        // Escaped characters
-        new RegExp(`\\b${blockedCmd.replace(/(.)/g, "$1\\\\?")}\\b`, "g"),
-      ];
+      // Check for blocked commands in various contexts, but skip if it's a virtual environment python
+      const isVenvPython =
+        blockedCmd.startsWith("python") &&
+        venvPatterns.some((pattern) => pattern.test(actualFirstCommand));
 
-      for (const pattern of patterns) {
-        if (pattern.test(command)) {
-          throw new Error(BLOCKED_COMMAND_MESSAGES[blockedCmd]);
+      if (!isVenvPython) {
+        const patterns: RegExp[] = [
+          // Direct command anywhere
+          new RegExp(`\\b${blockedCmd}\\b`, "g"),
+          // In command substitution $(...)
+          new RegExp(`\\$\\([^)]*\\b${blockedCmd}\\b[^)]*\\)`, "g"),
+          // In backticks `...`
+          new RegExp(`\`[^\`]*\\b${blockedCmd}\\b[^\`]*\``, "g"),
+          // In quoted strings within commands
+          new RegExp(`["'][^"']*\\b${blockedCmd}\\b[^"']*["']`, "g"),
+          // After operators like &&, ||, ;, |
+          new RegExp(`[;&|]{1,2}\\s*\\b${blockedCmd}\\b`, "g"),
+          // In background execution &
+          new RegExp(`\\b${blockedCmd}\\b\\s*&`, "g"),
+          // With redirection
+          new RegExp(`\\b${blockedCmd}\\b\\s*[<>]`, "g"),
+          // Escaped characters
+          new RegExp(`\\b${blockedCmd.replace(/(.)/g, "$1\\\\?")}\\b`, "g"),
+        ];
+
+        for (const pattern of patterns) {
+          if (pattern.test(command)) {
+            throw new Error(BLOCKED_COMMAND_MESSAGES[blockedCmd]);
+          }
         }
       }
     }
@@ -309,12 +322,6 @@ function checkReadOnlyFileEdit(filePath: string): void {
   }
 }
 
-
-
-
-
-
-
 export const CommandBlocker: Plugin = async ({
   app,
   client,
@@ -328,12 +335,8 @@ export const CommandBlocker: Plugin = async ({
 
         if (input.tool === "edit") {
           const newString = output.args.newString || "";
-
-
         } else if (input.tool === "write") {
           const content = output.args.content || "";
-
-
         }
       }
 

@@ -17,6 +17,10 @@ The plugin blocks various commands to promote better development practices:
 
 - **`pip`** - Blocked in favor of `uv` or `uvx`
 - **`python`**, **`python2`**, **`python3`** - Blocked in favor of `uv` or `uvx`
+  - **Exception**: Virtual environment python commands are allowed:
+    - ✅ `.venv/bin/python`, `.venv/bin/python3`
+    - ✅ `venv/bin/python`, `venv/bin/python3`
+    - ✅ `env/bin/python`, `env/bin/python3`
 
 #### Git Commands
 
@@ -73,6 +77,10 @@ bunx create-react-app my-app
 uv sync
 uvx ruff check .
 
+# Virtual environment python (allowed)
+.venv/bin/python script.py
+venv/bin/python3 -c "print('hello')"
+
 # Git read operations
 git status
 git diff HEAD~1
@@ -90,7 +98,7 @@ nix run github:nix-community/nixpkgs-fmt#nixpkgs-fmt
 node --version
 npm install
 pip install requests
-python script.py
+python script.py  # (but .venv/bin/python is allowed)
 git add .
 nix run ./my-flake#hello
 ```

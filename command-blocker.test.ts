@@ -82,6 +82,44 @@ describe("Command Blocker", () => {
       );
     });
 
+    it("should allow virtual environment python commands", async () => {
+      const input1 = { tool: "bash" };
+      const output1 = { args: { command: ".venv/bin/python script.py" } };
+      await expect(
+        plugin["tool.execute.before"](input1, output1)
+      ).resolves.toBeUndefined();
+
+      const input2 = { tool: "bash" };
+      const output2 = { args: { command: ".venv/bin/python3 -c 'print(\"hello\")'" } };
+      await expect(
+        plugin["tool.execute.before"](input2, output2)
+      ).resolves.toBeUndefined();
+
+      const input3 = { tool: "bash" };
+      const output3 = { args: { command: "venv/bin/python manage.py runserver" } };
+      await expect(
+        plugin["tool.execute.before"](input3, output3)
+      ).resolves.toBeUndefined();
+
+      const input4 = { tool: "bash" };
+      const output4 = { args: { command: "env/bin/python3 -c 'print(\"hello\")'" } };
+      await expect(
+        plugin["tool.execute.before"](input4, output4)
+      ).resolves.toBeUndefined();
+
+      const input5 = { tool: "bash" };
+      const output5 = { args: { command: "./.venv/bin/python test.py" } };
+      await expect(
+        plugin["tool.execute.before"](input5, output5)
+      ).resolves.toBeUndefined();
+
+      const input6 = { tool: "bash" };
+      const output6 = { args: { command: "../venv/bin/python3 script.py" } };
+      await expect(
+        plugin["tool.execute.before"](input6, output6)
+      ).resolves.toBeUndefined();
+    });
+
     it("should allow which/whereis commands", async () => {
       const input1 = { tool: "bash" };
       const output1 = { args: { command: "which node" } };
