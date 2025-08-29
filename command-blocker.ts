@@ -68,9 +68,9 @@ function checkPythonNodeCommand(command: string): void {
 
   // Allow python commands from virtual environments
   const venvPatterns: RegExp[] = [
-    /^[./\\]*\.venv[/\\]bin[/\\]python\d*$/, // .venv/bin/python, .venv/bin/python3
-    /^[./\\]*venv[/\\]bin[/\\]python\d*$/, // venv/bin/python, venv/bin/python3
-    /^[./\\]*env[/\\]bin[/\\]python\d*$/, // env/bin/python, env/bin/python3
+    /[./\\]*\.venv[/\\]bin[/\\]python\d*/, // .venv/bin/python, .venv/bin/python3
+    /[./\\]*venv[/\\]bin[/\\]python\d*/, // venv/bin/python, venv/bin/python3
+    /[./\\]*env[/\\]bin[/\\]python\d*/, // env/bin/python, env/bin/python3
   ];
 
   for (const blockedCmd of BLOCKED_COMMANDS) {
@@ -143,7 +143,18 @@ function checkPythonNodeCommand(command: string): void {
 
         for (const pattern of patterns) {
           if (pattern.test(command)) {
-            throw new Error(BLOCKED_COMMAND_MESSAGES[blockedCmd]);
+            // For python commands, check if it's a virtual environment python
+            if (blockedCmd.startsWith("python")) {
+              // Check if any venv python patterns match in the command
+              const hasVenvPython = venvPatterns.some((venvPattern) =>
+                venvPattern.test(command)
+              );
+              if (!hasVenvPython) {
+                throw new Error(BLOCKED_COMMAND_MESSAGES[blockedCmd]);
+              }
+            } else {
+              throw new Error(BLOCKED_COMMAND_MESSAGES[blockedCmd]);
+            }
           }
         }
       }

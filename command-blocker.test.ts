@@ -30,7 +30,7 @@ describe("Command Blocker", () => {
       await expect(
         plugin["tool.execute.before"](input, output)
       ).rejects.toThrow(
-        "`node` is blocked. Use `bun` or `bunx` instead to manage JavaScript dependencies and environments."
+        "`node` is blocked to ensure reproducible builds. Use `bun` (faster, more reliable) or `bunx` for running scripts. Example: `bun run dev` instead of `node server.js`"
       );
     });
 
@@ -41,7 +41,7 @@ describe("Command Blocker", () => {
       await expect(
         plugin["tool.execute.before"](input, output)
       ).rejects.toThrow(
-        "`npm` is blocked. Use `bun` or `bunx` instead to manage JavaScript dependencies and environments."
+        "`npm` is blocked to ensure reproducible builds. Use `bun` (faster, more reliable) instead. Examples: `bun install` instead of `npm install`, `bun run build` instead of `npm run build`"
       );
     });
 
@@ -52,7 +52,7 @@ describe("Command Blocker", () => {
       await expect(
         plugin["tool.execute.before"](input, output)
       ).rejects.toThrow(
-        "`pip` is blocked. Use `uv` or `uvx` instead to manage Python dependencies and environments."
+        "`pip` is blocked to ensure reproducible builds. Use `uv` or `uvx` for dependency management. Example: `uv add requests` instead of `pip install requests`"
       );
     });
 
@@ -62,7 +62,7 @@ describe("Command Blocker", () => {
       await expect(
         plugin["tool.execute.before"](input1, output1)
       ).rejects.toThrow(
-        "`python` is blocked. Use `uv` or `uvx` instead to manage Python dependencies and environments."
+        "`python` is blocked to ensure environment isolation. Use `uv` for dependency management or `uvx` for running tools. Virtual environment python (e.g., `.venv/bin/python`) is allowed. Example: `uv run python script.py`"
       );
 
       const input2 = { tool: "bash" };
@@ -70,7 +70,7 @@ describe("Command Blocker", () => {
       await expect(
         plugin["tool.execute.before"](input2, output2)
       ).rejects.toThrow(
-        "`python2` is blocked. Use `uv` or `uvx` instead to manage Python dependencies and environments."
+        "`python2` is blocked (Python 2 is deprecated). Use `uv` with Python 3 for modern dependency management. Virtual environment python2 commands are allowed if needed. Example: `uv run --python 3.8 python script.py`"
       );
 
       const input3 = { tool: "bash" };
@@ -78,7 +78,7 @@ describe("Command Blocker", () => {
       await expect(
         plugin["tool.execute.before"](input3, output3)
       ).rejects.toThrow(
-        "`python3` is blocked. Use `uv` or `uvx` instead to manage Python dependencies and environments."
+        "`python3` is blocked to ensure environment isolation. Use `uv` for dependency management or `uvx` for running tools. Virtual environment python3 (e.g., `.venv/bin/python3`) is allowed. Example: `uv run python3 script.py`"
       );
     });
 
@@ -90,19 +90,25 @@ describe("Command Blocker", () => {
       ).resolves.toBeUndefined();
 
       const input2 = { tool: "bash" };
-      const output2 = { args: { command: ".venv/bin/python3 -c 'print(\"hello\")'" } };
+      const output2 = {
+        args: { command: ".venv/bin/python3 -c 'print(\"hello\")'" },
+      };
       await expect(
         plugin["tool.execute.before"](input2, output2)
       ).resolves.toBeUndefined();
 
       const input3 = { tool: "bash" };
-      const output3 = { args: { command: "venv/bin/python manage.py runserver" } };
+      const output3 = {
+        args: { command: "venv/bin/python manage.py runserver" },
+      };
       await expect(
         plugin["tool.execute.before"](input3, output3)
       ).resolves.toBeUndefined();
 
       const input4 = { tool: "bash" };
-      const output4 = { args: { command: "env/bin/python3 -c 'print(\"hello\")'" } };
+      const output4 = {
+        args: { command: "env/bin/python3 -c 'print(\"hello\")'" },
+      };
       await expect(
         plugin["tool.execute.before"](input4, output4)
       ).resolves.toBeUndefined();
@@ -117,6 +123,12 @@ describe("Command Blocker", () => {
       const output6 = { args: { command: "../venv/bin/python3 script.py" } };
       await expect(
         plugin["tool.execute.before"](input6, output6)
+      ).resolves.toBeUndefined();
+
+      const input7 = { tool: "bash" };
+      const output7 = { args: { command: "cd directory & .venv/bin/python" } };
+      await expect(
+        plugin["tool.execute.before"](input7, output7)
       ).resolves.toBeUndefined();
     });
 
@@ -540,7 +552,7 @@ describe("Command Blocker", () => {
       await expect(
         plugin["tool.execute.before"](input1, output1)
       ).rejects.toThrow(
-        "`git` commands are blocked for reproducibility and maintainability. Only read-only commands are allowed."
+        "`git` write operations are blocked to prevent agents from managing version control. Only read-only commands are allowed: `git status`, `git diff`, `git show`."
       );
 
       const input2 = { tool: "bash" };
@@ -801,7 +813,7 @@ describe("Command Blocker", () => {
       await expect(
         plugin["tool.execute.before"](input1, output1)
       ).rejects.toThrow(
-        "Referencing local flake paths without `path:` prefix is blocked. Use `path:` prefix (e.g., `nix run path:./my-flake#output`) to ensure uncommitted changes are included."
+        "Local flake paths without `path:` prefix are blocked to ensure reproducible builds. Use `path:` for local flakes (includes uncommitted changes), `github:` for remote repos, or `git+https:` for git URLs. Examples: `nix run path:./my-flake#output`, `nix run github:user/repo#output`"
       );
 
       const input2 = { tool: "bash" };
@@ -1046,7 +1058,7 @@ describe("Command Blocker", () => {
       await expect(
         plugin["tool.execute.before"](input1, output1)
       ).rejects.toThrow(
-        "`package-lock.json` editing is blocked. This file is auto-generated by npm. Use `bun install` or `bun update` to update dependencies instead."
+        "`package-lock.json` editing is blocked to ensure reproducible builds. This auto-generated file ensures consistent npm installs. Use `bun install` or `bun update` to modify dependencies."
       );
 
       const input2 = { tool: "edit" };
@@ -1054,7 +1066,7 @@ describe("Command Blocker", () => {
       await expect(
         plugin["tool.execute.before"](input2, output2)
       ).rejects.toThrow(
-        "`bun.lockb` editing is blocked. This file is auto-generated by Bun. Use `bun install` or `bun update` to update dependencies instead."
+        "`bun.lockb` editing is blocked to ensure reproducible builds. This auto-generated binary lockfile ensures consistent Bun installs. Use `bun install` or `bun update` to modify dependencies."
       );
 
       const input3 = { tool: "edit" };
@@ -1062,7 +1074,7 @@ describe("Command Blocker", () => {
       await expect(
         plugin["tool.execute.before"](input3, output3)
       ).rejects.toThrow(
-        "`yarn.lock` editing is blocked. This file is auto-generated by Yarn. Use `yarn install` or `yarn upgrade` to update dependencies instead."
+        "`yarn.lock` editing is blocked to ensure reproducible builds. This auto-generated file ensures consistent Yarn installs. Use `yarn install` or `yarn upgrade` to modify dependencies."
       );
 
       const input4 = { tool: "edit" };
@@ -1070,7 +1082,7 @@ describe("Command Blocker", () => {
       await expect(
         plugin["tool.execute.before"](input4, output4)
       ).rejects.toThrow(
-        "`flake.lock` editing is blocked. This file is auto-generated by Nix. Use `nix flake update` to update dependencies instead."
+        "`flake.lock` editing is blocked to ensure reproducible builds. This auto-generated file pins exact dependency versions for Nix flakes. Use `nix flake update` to safely update dependencies."
       );
     });
 
@@ -1102,8 +1114,6 @@ describe("Command Blocker", () => {
       ).resolves.toBeUndefined();
     });
   });
-
-
 
   describe("checkTypeScriptAnyType", () => {
     let plugin: any;
@@ -1254,8 +1264,6 @@ describe("Command Blocker", () => {
         "`package-lock.json` editing is blocked"
       );
     });
-
-
 
     it("should allow file content with TypeScript any types (temporarily disabled)", async () => {
       const plugin = await CommandBlocker({
@@ -1408,7 +1416,7 @@ describe("Command Blocker", () => {
 
       const hook = (plugin as PluginHook)["tool.execute.before"];
       await expect(hook(input, output)).rejects.toThrow(
-        "`git` commands are blocked"
+        "`git` write operations are blocked to prevent agents from managing version control. Only read-only commands are allowed: `git status`, `git diff`, `git show`."
       );
     });
 
