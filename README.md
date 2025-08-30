@@ -2,6 +2,8 @@
 
 A comprehensive opencode plugin that enforces best practices by blocking potentially harmful or non-reproducible commands and file edits.
 
+![Demo](screenshot.png)
+
 ## Features
 
 ### Command Blocking

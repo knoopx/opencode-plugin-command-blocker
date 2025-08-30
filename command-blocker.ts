@@ -66,11 +66,13 @@ function checkPythonNodeCommand(command: string): void {
   const isWhichOrWhereis: boolean =
     command.includes("which") || command.includes("whereis");
 
-  // Allow python commands from virtual environments
+  // Allow python commands from virtual environments and uv
   const venvPatterns: RegExp[] = [
     /[./\\]*\.venv[/\\]bin[/\\]python\d*/, // .venv/bin/python, .venv/bin/python3
     /[./\\]*venv[/\\]bin[/\\]python\d*/, // venv/bin/python, venv/bin/python3
     /[./\\]*env[/\\]bin[/\\]python\d*/, // env/bin/python, env/bin/python3
+    /uv run python\d*/, // uv run python, uv run python3
+    /uvx python\d*/, // uvx python, uvx python3
   ];
 
   for (const blockedCmd of BLOCKED_COMMANDS) {

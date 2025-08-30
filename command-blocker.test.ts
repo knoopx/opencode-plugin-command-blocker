@@ -85,65 +85,96 @@ describe("Command Blocker", () => {
     it("should allow virtual environment python commands", async () => {
       const input1 = { tool: "bash" };
       const output1 = { args: { command: ".venv/bin/python script.py" } };
-      await expect(
-        plugin["tool.execute.before"](input1, output1)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input1, output1);
+      }).not.toThrow();
 
       const input2 = { tool: "bash" };
       const output2 = {
         args: { command: ".venv/bin/python3 -c 'print(\"hello\")'" },
       };
-      await expect(
-        plugin["tool.execute.before"](input2, output2)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input2, output2);
+      }).not.toThrow();
 
       const input3 = { tool: "bash" };
       const output3 = {
         args: { command: "venv/bin/python manage.py runserver" },
       };
-      await expect(
-        plugin["tool.execute.before"](input3, output3)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input3, output3);
+      }).not.toThrow();
 
       const input4 = { tool: "bash" };
       const output4 = {
         args: { command: "env/bin/python3 -c 'print(\"hello\")'" },
       };
-      await expect(
-        plugin["tool.execute.before"](input4, output4)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input4, output4);
+      }).not.toThrow();
 
       const input5 = { tool: "bash" };
       const output5 = { args: { command: "./.venv/bin/python test.py" } };
-      await expect(
-        plugin["tool.execute.before"](input5, output5)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input5, output5);
+      }).not.toThrow();
 
       const input6 = { tool: "bash" };
       const output6 = { args: { command: "../venv/bin/python3 script.py" } };
-      await expect(
-        plugin["tool.execute.before"](input6, output6)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input6, output6);
+      }).not.toThrow();
 
       const input7 = { tool: "bash" };
       const output7 = { args: { command: "cd directory & .venv/bin/python" } };
-      await expect(
-        plugin["tool.execute.before"](input7, output7)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input7, output7);
+      }).not.toThrow();
+
+      const input8 = { tool: "bash" };
+      const output8 = { args: { command: "uv run python script.py" } };
+      await expect(async () => {
+        await plugin["tool.execute.before"](input8, output8);
+      }).not.toThrow();
+
+      const input9 = { tool: "bash" };
+      const output9 = {
+        args: { command: "uv run python3 -c 'print(\"hello\")'" },
+      };
+      await expect(async () => {
+        await plugin["tool.execute.before"](input9, output9);
+      }).not.toThrow();
+
+      const input10 = { tool: "bash" };
+      const output10 = { args: { command: "uvx python manage.py runserver" } };
+      await expect(async () => {
+        await plugin["tool.execute.before"](input10, output10);
+      }).not.toThrow();
+
+      const input11 = { tool: "bash" };
+      const output11 = {
+        args: {
+          command:
+            'cd /home/knoopx/Projects/my-project && uv run python -c "import torchdata; print(dir(torchdata))"',
+        },
+      };
+      await expect(async () => {
+        await plugin["tool.execute.before"](input11, output11);
+      }).not.toThrow();
     });
 
     it("should allow which/whereis commands", async () => {
       const input1 = { tool: "bash" };
       const output1 = { args: { command: "which node" } };
-      await expect(
-        plugin["tool.execute.before"](input1, output1)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input1, output1);
+      }).not.toThrow();
 
       const input2 = { tool: "bash" };
       const output2 = { args: { command: "whereis python" } };
-      await expect(
-        plugin["tool.execute.before"](input2, output2)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input2, output2);
+      }).not.toThrow();
     });
 
     it("should block commands containing blocked words", async () => {
@@ -163,15 +194,15 @@ describe("Command Blocker", () => {
     it("should allow non-blocked commands", async () => {
       const input1 = { tool: "bash" };
       const output1 = { args: { command: "ls -la" } };
-      await expect(
-        plugin["tool.execute.before"](input1, output1)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input1, output1);
+      }).not.toThrow();
 
       const input2 = { tool: "bash" };
       const output2 = { args: { command: "bun install" } };
-      await expect(
-        plugin["tool.execute.before"](input2, output2)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input2, output2);
+      }).not.toThrow();
     });
 
     // Test piping and escape methods
@@ -471,41 +502,41 @@ describe("Command Blocker", () => {
     it("should allow safe piped commands", async () => {
       const input1 = { tool: "bash" };
       const output1 = { args: { command: "ls -la | grep test" } };
-      await expect(
-        plugin["tool.execute.before"](input1, output1)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input1, output1);
+      }).not.toThrow();
 
       const input2 = { tool: "bash" };
       const output2 = { args: { command: "cat file.txt | head -5" } };
-      await expect(
-        plugin["tool.execute.before"](input2, output2)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input2, output2);
+      }).not.toThrow();
 
       const input3 = { tool: "bash" };
       const output3 = { args: { command: 'echo "hello" | wc -l' } };
-      await expect(
-        plugin["tool.execute.before"](input3, output3)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input3, output3);
+      }).not.toThrow();
     });
 
     it("should allow safe command substitution", async () => {
       const input1 = { tool: "bash" };
       const output1 = { args: { command: "echo $(date)" } };
-      await expect(
-        plugin["tool.execute.before"](input1, output1)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input1, output1);
+      }).not.toThrow();
 
       const input2 = { tool: "bash" };
       const output2 = { args: { command: "echo `pwd`" } };
-      await expect(
-        plugin["tool.execute.before"](input2, output2)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input2, output2);
+      }).not.toThrow();
 
       const input3 = { tool: "bash" };
       const output3 = { args: { command: 'ls $(echo "*.txt")' } };
-      await expect(
-        plugin["tool.execute.before"](input3, output3)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input3, output3);
+      }).not.toThrow();
     });
   });
 
@@ -529,21 +560,21 @@ describe("Command Blocker", () => {
     it("should allow read-only git commands", async () => {
       const input1 = { tool: "bash" };
       const output1 = { args: { command: "git status" } };
-      await expect(
-        plugin["tool.execute.before"](input1, output1)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input1, output1);
+      }).not.toThrow();
 
       const input2 = { tool: "bash" };
       const output2 = { args: { command: "git diff" } };
-      await expect(
-        plugin["tool.execute.before"](input2, output2)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input2, output2);
+      }).not.toThrow();
 
       const input3 = { tool: "bash" };
       const output3 = { args: { command: "git show HEAD" } };
-      await expect(
-        plugin["tool.execute.before"](input3, output3)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input3, output3);
+      }).not.toThrow();
     });
 
     it("should block write git commands", async () => {
@@ -589,9 +620,9 @@ describe("Command Blocker", () => {
     it("should allow non-git commands", async () => {
       const input = { tool: "bash" };
       const output = { args: { command: "ls -la" } };
-      await expect(
-        plugin["tool.execute.before"](input, output)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input, output);
+      }).not.toThrow();
     });
 
     // Test git command escape methods
@@ -740,21 +771,21 @@ describe("Command Blocker", () => {
     it("should allow safe git operations with pipes", async () => {
       const input1 = { tool: "bash" };
       const output1 = { args: { command: "git status | cat" } };
-      await expect(
-        plugin["tool.execute.before"](input1, output1)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input1, output1);
+      }).not.toThrow();
 
       const input2 = { tool: "bash" };
       const output2 = { args: { command: "git diff | less" } };
-      await expect(
-        plugin["tool.execute.before"](input2, output2)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input2, output2);
+      }).not.toThrow();
 
       const input3 = { tool: "bash" };
       const output3 = { args: { command: "git show HEAD | head -20" } };
-      await expect(
-        plugin["tool.execute.before"](input3, output3)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input3, output3);
+      }).not.toThrow();
     });
   });
 
@@ -778,23 +809,23 @@ describe("Command Blocker", () => {
     it("should allow nix commands with path: prefix", async () => {
       const input1 = { tool: "bash" };
       const output1 = { args: { command: "nix run path:./my-flake#output" } };
-      await expect(
-        plugin["tool.execute.before"](input1, output1)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input1, output1);
+      }).not.toThrow();
 
       const input2 = { tool: "bash" };
       const output2 = { args: { command: "nix build path:../flake#package" } };
-      await expect(
-        plugin["tool.execute.before"](input2, output2)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input2, output2);
+      }).not.toThrow();
     });
 
     it("should allow nix commands with github: prefix", async () => {
       const input = { tool: "bash" };
       const output = { args: { command: "nix run github:user/repo#output" } };
-      await expect(
-        plugin["tool.execute.before"](input, output)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input, output);
+      }).not.toThrow();
     });
 
     it("should allow nix commands with git+https: prefix", async () => {
@@ -802,9 +833,9 @@ describe("Command Blocker", () => {
       const output = {
         args: { command: "nix run git+https://github.com/user/repo#output" },
       };
-      await expect(
-        plugin["tool.execute.before"](input, output)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input, output);
+      }).not.toThrow();
     });
 
     it("should block nix commands without proper prefix", async () => {
@@ -838,23 +869,23 @@ describe("Command Blocker", () => {
     it("should allow non-nix commands", async () => {
       const input = { tool: "bash" };
       const output = { args: { command: "ls -la" } };
-      await expect(
-        plugin["tool.execute.before"](input, output)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input, output);
+      }).not.toThrow();
     });
 
     it("should allow nix commands that are not run or build", async () => {
       const input1 = { tool: "bash" };
       const output1 = { args: { command: "nix flake update" } };
-      await expect(
-        plugin["tool.execute.before"](input1, output1)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input1, output1);
+      }).not.toThrow();
 
       const input2 = { tool: "bash" };
       const output2 = { args: { command: "nix develop" } };
-      await expect(
-        plugin["tool.execute.before"](input2, output2)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input2, output2);
+      }).not.toThrow();
     });
 
     // Test nix command escape methods
@@ -869,17 +900,17 @@ describe("Command Blocker", () => {
 
       const input2 = { tool: "bash" };
       const output2 = { args: { command: "cat flake.nix | nix build" } };
-      await expect(
-        plugin["tool.execute.before"](input2, output2)
-      ).resolves.toBeUndefined(); // This should be allowed since nix build is allowed
+      await expect(async () => {
+        await plugin["tool.execute.before"](input2, output2);
+      }).not.toThrow(); // This should be allowed since nix build is allowed
 
       const input3 = { tool: "bash" };
       const output3 = {
         args: { command: 'echo "nix run github:user/repo" | sh' },
       };
-      await expect(
-        plugin["tool.execute.before"](input3, output3)
-      ).resolves.toBeUndefined(); // This should be allowed since it has github: prefix
+      await expect(async () => {
+        await plugin["tool.execute.before"](input3, output3);
+      }).not.toThrow(); // This should be allowed since it has github: prefix
     });
 
     it("should block nix with command substitution", async () => {
@@ -1013,25 +1044,25 @@ describe("Command Blocker", () => {
     it("should allow safe nix operations with pipes", async () => {
       const input1 = { tool: "bash" };
       const output1 = { args: { command: "nix flake show | cat" } };
-      await expect(
-        plugin["tool.execute.before"](input1, output1)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input1, output1);
+      }).not.toThrow();
 
       const input2 = { tool: "bash" };
       const output2 = {
         args: { command: "nix build path:./flake#package | head -10" },
       };
-      await expect(
-        plugin["tool.execute.before"](input2, output2)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input2, output2);
+      }).not.toThrow();
 
       const input3 = { tool: "bash" };
       const output3 = {
         args: { command: "nix run github:user/repo#package | grep output" },
       };
-      await expect(
-        plugin["tool.execute.before"](input3, output3)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input3, output3);
+      }).not.toThrow();
     });
   });
 
@@ -1089,29 +1120,29 @@ describe("Command Blocker", () => {
     it("should allow editing other files", async () => {
       const input1 = { tool: "edit" };
       const output1 = { args: { filePath: "package.json" } };
-      await expect(
-        plugin["tool.execute.before"](input1, output1)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input1, output1);
+      }).not.toThrow();
 
       const input2 = { tool: "edit" };
       const output2 = { args: { filePath: "src/main.ts" } };
-      await expect(
-        plugin["tool.execute.before"](input2, output2)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input2, output2);
+      }).not.toThrow();
     });
 
     it("should handle empty file path", async () => {
       const input1 = { tool: "edit" };
       const output1 = { args: { filePath: "" } };
-      await expect(
-        plugin["tool.execute.before"](input1, output1)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input1, output1);
+      }).not.toThrow();
 
       const input2 = { tool: "edit" };
       const output2 = { args: { filePath: undefined } };
-      await expect(
-        plugin["tool.execute.before"](input2, output2)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input2, output2);
+      }).not.toThrow();
     });
   });
 
@@ -1137,25 +1168,25 @@ describe("Command Blocker", () => {
       const output1 = {
         args: { filePath: "test.ts", newString: "const x: any = 5;" },
       };
-      await expect(
-        plugin["tool.execute.before"](input1, output1)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input1, output1);
+      }).not.toThrow();
 
       const input2 = { tool: "edit" };
       const output2 = {
         args: { filePath: "test.ts", newString: "function f(param: any) {}" },
       };
-      await expect(
-        plugin["tool.execute.before"](input2, output2)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input2, output2);
+      }).not.toThrow();
 
       const input3 = { tool: "edit" };
       const output3 = {
         args: { filePath: "test.ts", newString: "const arr: any[] = [];" },
       };
-      await expect(
-        plugin["tool.execute.before"](input3, output3)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input3, output3);
+      }).not.toThrow();
 
       const input4 = { tool: "edit" };
       const output4 = {
@@ -1164,17 +1195,17 @@ describe("Command Blocker", () => {
           newString: "const obj: Record<string, any> = {};",
         },
       };
-      await expect(
-        plugin["tool.execute.before"](input4, output4)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input4, output4);
+      }).not.toThrow();
 
       const input5 = { tool: "edit" };
       const output5 = {
         args: { filePath: "test.ts", newString: "const x = value as any;" },
       };
-      await expect(
-        plugin["tool.execute.before"](input5, output5)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input5, output5);
+      }).not.toThrow();
     });
 
     it("should allow proper type annotations", async () => {
@@ -1182,17 +1213,17 @@ describe("Command Blocker", () => {
       const output1 = {
         args: { filePath: "test.ts", newString: 'const x: string = "hello";' },
       };
-      await expect(
-        plugin["tool.execute.before"](input1, output1)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input1, output1);
+      }).not.toThrow();
 
       const input2 = { tool: "edit" };
       const output2 = {
         args: { filePath: "test.ts", newString: "const x: number = 42;" },
       };
-      await expect(
-        plugin["tool.execute.before"](input2, output2)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input2, output2);
+      }).not.toThrow();
     });
 
     it("should only check TypeScript files", async () => {
@@ -1200,31 +1231,31 @@ describe("Command Blocker", () => {
       const output1 = {
         args: { filePath: "test.js", newString: "const x: any = 5;" },
       };
-      await expect(
-        plugin["tool.execute.before"](input1, output1)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input1, output1);
+      }).not.toThrow();
 
       const input2 = { tool: "edit" };
       const output2 = {
         args: { filePath: "test.txt", newString: "const x: any = 5;" },
       };
-      await expect(
-        plugin["tool.execute.before"](input2, output2)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input2, output2);
+      }).not.toThrow();
     });
 
     it("should handle empty inputs", async () => {
       const input1 = { tool: "edit" };
       const output1 = { args: { filePath: "", newString: "content" } };
-      await expect(
-        plugin["tool.execute.before"](input1, output1)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input1, output1);
+      }).not.toThrow();
 
       const input2 = { tool: "edit" };
       const output2 = { args: { filePath: "test.ts", newString: "" } };
-      await expect(
-        plugin["tool.execute.before"](input2, output2)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input2, output2);
+      }).not.toThrow();
     });
   });
 
@@ -1276,9 +1307,9 @@ describe("Command Blocker", () => {
         args: { filePath: "test.ts", content: "const x: any = 5;" },
       };
 
-      await expect(
-        plugin["tool.execute.before"](input, output)
-      ).resolves.toBeUndefined();
+      await expect(async () => {
+        await plugin["tool.execute.before"](input, output);
+      }).not.toThrow();
     });
 
     it("should check bash commands", async () => {
@@ -1310,7 +1341,9 @@ describe("Command Blocker", () => {
       };
 
       const hook = (plugin as PluginHook)["tool.execute.before"];
-      await expect(hook(input, output)).resolves.toBeUndefined();
+      await expect(async () => {
+        await hook(input, output);
+      }).not.toThrow();
     });
 
     // Integration tests for escape methods
@@ -1430,7 +1463,9 @@ describe("Command Blocker", () => {
       const output = { args: { command: "ls -la | grep test" } };
 
       const hook = (plugin as PluginHook)["tool.execute.before"];
-      await expect(hook(input, output)).resolves.toBeUndefined();
+      await expect(async () => {
+        await hook(input, output);
+      }).not.toThrow();
     });
 
     it("should allow safe bash commands with command substitution", async () => {
@@ -1443,7 +1478,9 @@ describe("Command Blocker", () => {
       const output = { args: { command: "echo $(date)" } };
 
       const hook = (plugin as PluginHook)["tool.execute.before"];
-      await expect(hook(input, output)).resolves.toBeUndefined();
+      await expect(async () => {
+        await hook(input, output);
+      }).not.toThrow();
     });
 
     it("should allow safe bash commands with semicolons", async () => {
