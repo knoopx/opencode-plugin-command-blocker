@@ -575,6 +575,18 @@ describe("Command Blocker", () => {
       await expect(async () => {
         await plugin["tool.execute.before"](input3, output3);
       }).not.toThrow();
+
+      const input4 = { tool: "bash" };
+      const output4 = { args: { command: "git rev-parse HEAD" } };
+      await expect(async () => {
+        await plugin["tool.execute.before"](input4, output4);
+      }).not.toThrow();
+
+      const input5 = { tool: "bash" };
+      const output5 = { args: { command: "git log --oneline -1" } };
+      await expect(async () => {
+        await plugin["tool.execute.before"](input5, output5);
+      }).not.toThrow();
     });
 
     it("should block write git commands", async () => {
@@ -583,7 +595,7 @@ describe("Command Blocker", () => {
       await expect(
         plugin["tool.execute.before"](input1, output1)
       ).rejects.toThrow(
-        "`git` write operations are blocked to prevent agents from managing version control. Only read-only commands are allowed: `git status`, `git diff`, `git show`."
+        "`git` write operations are blocked to prevent agents from managing version control. Only read-only commands are allowed: `git status`, `git diff`, `git show`, `git log`, `git rev-parse`."
       );
 
       const input2 = { tool: "bash" };
@@ -1449,7 +1461,7 @@ describe("Command Blocker", () => {
 
       const hook = (plugin as PluginHook)["tool.execute.before"];
       await expect(hook(input, output)).rejects.toThrow(
-        "`git` write operations are blocked to prevent agents from managing version control. Only read-only commands are allowed: `git status`, `git diff`, `git show`."
+        "`git` write operations are blocked to prevent agents from managing version control. Only read-only commands are allowed: `git status`, `git diff`, `git show`, `git log`, `git rev-parse`."
       );
     });
 

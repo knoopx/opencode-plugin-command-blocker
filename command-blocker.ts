@@ -18,7 +18,7 @@ const BLOCKED_COMMAND_MESSAGES: BlockedCommandMessages = {
     "`python2` is blocked (Python 2 is deprecated). Use `uv` with Python 3 for modern dependency management. Virtual environment python2 commands are allowed if needed. Example: `uv run --python 3.8 python script.py`",
   python3:
     "`python3` is blocked to ensure environment isolation. Use `uv` for dependency management or `uvx` for running tools. Virtual environment python3 (e.g., `.venv/bin/python3`) is allowed. Example: `uv run python3 script.py`",
-  git: "`git` write operations are blocked to prevent agents from managing version control. Only read-only commands are allowed: `git status`, `git diff`, `git show`.",
+  git: "`git` write operations are blocked to prevent agents from managing version control. Only read-only commands are allowed: `git status`, `git diff`, `git show`, `git log`, `git rev-parse`.",
   nix: "Local flake paths without `path:` prefix are blocked to ensure reproducible builds. Use `path:` for local flakes (includes uncommitted changes), `github:` for remote repos, or `git+https:` for git URLs. Examples: `nix run path:./my-flake#output`, `nix run github:user/repo#output`",
 };
 
@@ -56,6 +56,8 @@ const BLOCKED_COMMANDS: readonly string[] = Object.keys(
 );
 const ALLOWED_GIT_COMMANDS: readonly string[] = [
   "git diff",
+  "git log",
+  "git rev-parse",
   "git show",
   "git status",
 ];
