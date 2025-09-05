@@ -45,6 +45,17 @@ describe("Command Blocker", () => {
       );
     });
 
+    it("should block npx command", async () => {
+      const input = { tool: "bash" };
+      const output = { args: { command: "npx create-react-app my-app" } };
+
+      await expect(
+        plugin["tool.execute.before"](input, output)
+      ).rejects.toThrow(
+        "`npx` is blocked to ensure reproducible builds. Use `bunx` (faster, more reliable) instead. Examples: `bunx create-react-app my-app` instead of `npx create-react-app my-app`"
+      );
+    });
+
     it("should block pip command", async () => {
       const input = { tool: "bash" };
       const output = { args: { command: "pip install requests" } };
@@ -235,6 +246,20 @@ describe("Command Blocker", () => {
 
       const input2 = { tool: "bash" };
       const output2 = { args: { command: "npm list | grep package" } };
+      await expect(
+        plugin["tool.execute.before"](input2, output2)
+      ).rejects.toThrow();
+    });
+
+    it("should block npx in piped commands", async () => {
+      const input1 = { tool: "bash" };
+      const output1 = { args: { command: 'echo "npx create-react-app" | sh' } };
+      await expect(
+        plugin["tool.execute.before"](input1, output1)
+      ).rejects.toThrow();
+
+      const input2 = { tool: "bash" };
+      const output2 = { args: { command: "npx eslint | grep error" } };
       await expect(
         plugin["tool.execute.before"](input2, output2)
       ).rejects.toThrow();

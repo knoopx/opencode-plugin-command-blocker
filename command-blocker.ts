@@ -11,6 +11,7 @@ interface ReadOnlyFiles {
 const BLOCKED_COMMAND_MESSAGES: BlockedCommandMessages = {
   node: "`node` is blocked to ensure reproducible builds. Use `bun` (faster, more reliable) or `bunx` for running scripts. Example: `bun run dev` instead of `node server.js`",
   npm: "`npm` is blocked to ensure reproducible builds. Use `bun` (faster, more reliable) instead. Examples: `bun install` instead of `npm install`, `bun run build` instead of `npm run build`",
+  npx: "`npx` is blocked to ensure reproducible builds. Use `bunx` (faster, more reliable) instead. Examples: `bunx create-react-app my-app` instead of `npx create-react-app my-app`",
   pip: "`pip` is blocked to ensure reproducible builds. Use `uv` or `uvx` for dependency management. Example: `uv add requests` instead of `pip install requests`",
   python:
     "`python` is blocked to ensure environment isolation. Use `uv` for dependency management or `uvx` for running tools. Virtual environment python (e.g., `.venv/bin/python`) is allowed. Example: `uv run python script.py`",
