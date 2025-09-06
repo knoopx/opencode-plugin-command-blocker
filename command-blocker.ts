@@ -58,6 +58,7 @@ const BLOCKED_COMMANDS: readonly string[] = Object.keys(
 const ALLOWED_GIT_COMMANDS: readonly string[] = [
   "git diff",
   "git log",
+  "git ls-files",
   "git rev-parse",
   "git show",
   "git status",

@@ -607,12 +607,18 @@ describe("Command Blocker", () => {
         await plugin["tool.execute.before"](input4, output4);
       }).not.toThrow();
 
-      const input5 = { tool: "bash" };
-      const output5 = { args: { command: "git log --oneline -1" } };
-      await expect(async () => {
-        await plugin["tool.execute.before"](input5, output5);
-      }).not.toThrow();
-    });
+       const input5 = { tool: "bash" };
+       const output5 = { args: { command: "git log --oneline -1" } };
+       await expect(async () => {
+         await plugin["tool.execute.before"](input5, output5);
+       }).not.toThrow();
+
+       const input6 = { tool: "bash" };
+       const output6 = { args: { command: "git ls-files --others --exclude-standard" } };
+       await expect(async () => {
+         await plugin["tool.execute.before"](input6, output6);
+       }).not.toThrow();
+     });
 
     it("should block write git commands", async () => {
       const input1 = { tool: "bash" };
