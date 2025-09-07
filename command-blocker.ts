@@ -284,8 +284,7 @@ function checkNixCommand(command: string): void {
         !flakeArg.match(/^git\+https:/) &&
         (flakeArg.startsWith("./") ||
           flakeArg.startsWith("../") ||
-          flakeArg.startsWith("/") ||
-          /^[a-zA-Z0-9._-]+$/.test(flakeArg.split("#")[0]))
+          flakeArg.startsWith("/"))
       ) {
         throw new Error(BLOCKED_COMMAND_MESSAGES["nix"]);
       }
@@ -316,8 +315,7 @@ function checkNixCommand(command: string): void {
             !flakeArg.match(/^git\+https:/) &&
             (flakeArg.startsWith("./") ||
               flakeArg.startsWith("../") ||
-              flakeArg.startsWith("/") ||
-              /^[a-zA-Z0-9._-]+$/.test(flakeArg.split("#")[0]))
+              flakeArg.startsWith("/"))
           ) {
             throw new Error(BLOCKED_COMMAND_MESSAGES["nix"]);
           }

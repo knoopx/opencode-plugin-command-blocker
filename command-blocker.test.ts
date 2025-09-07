@@ -901,12 +901,20 @@ describe("Command Blocker", () => {
       await expect(
         plugin["tool.execute.before"](input3, output3)
       ).rejects.toThrow();
+    });
 
-      const input4 = { tool: "bash" };
-      const output4 = { args: { command: "nix run my-flake#output" } };
-      await expect(
-        plugin["tool.execute.before"](input4, output4)
-      ).rejects.toThrow();
+    it("should allow nix registry references", async () => {
+      const input1 = { tool: "bash" };
+      const output1 = { args: { command: "nix run nixpkgs#yq" } };
+      await expect(async () => {
+        await plugin["tool.execute.before"](input1, output1);
+      }).not.toThrow();
+
+      const input2 = { tool: "bash" };
+      const output2 = { args: { command: "nix run nixpkgs/unstable#hello" } };
+      await expect(async () => {
+        await plugin["tool.execute.before"](input2, output2);
+      }).not.toThrow();
     });
 
     it("should allow non-nix commands", async () => {
