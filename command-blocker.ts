@@ -52,6 +52,96 @@ const READ_ONLY_FILES: ReadOnlyFiles = {
     "`Gemfile.lock` editing is blocked to ensure reproducible builds. This auto-generated file ensures consistent Ruby environments. Use `bundle install` or `bundle update` to modify dependencies.",
 };
 
+const SECRET_FILES: readonly string[] = [
+  // Environment files
+  ".env*",
+  "**/.env*",
+
+  // Generic secrets files
+  "secrets.*",
+  "**/secrets.*",
+  ".secrets",
+  "**/.secrets",
+  "credentials.*",
+  "**/credentials.*",
+  ".credentials",
+  "**/.credentials",
+
+  // Authentication and token files
+  "*auth*",
+  "**/*auth*",
+  "*token*",
+  "**/*token*",
+  "*password*",
+  "**/*password*",
+
+  // SSL/TLS certificates and keys
+  "*.pem",
+  "**/*.pem",
+  "*.key",
+  "**/*.key",
+  "*.crt",
+  "**/*.crt",
+  "*.cer",
+  "**/*.cer",
+  "*.p12",
+  "**/*.p12",
+  "*.pfx",
+  "**/*.pfx",
+  "*.jks",
+  "**/*.jks",
+  "*.keystore",
+  "**/*.keystore",
+
+  // AWS credentials
+  ".aws/*",
+  "**/.aws/*",
+  ".boto",
+  "**/.boto",
+
+  // SSH keys
+  "id_*",
+  "**/id_*",
+  ".ssh/id_*",
+  "**/.ssh/id_*",
+  "*.pub", // Public keys (often contain identifying info)
+  "**/*.pub",
+
+  // Configuration files that may contain secrets
+  ".npmrc",
+  "**/.npmrc",
+  ".docker/config.json",
+  "**/.docker/config.json",
+  ".git-credentials",
+  "**/.git-credentials",
+  ".netrc",
+  "**/.netrc",
+  ".pgpass",
+  "**/.pgpass",
+  ".my.cnf",
+  "**/.my.cnf",
+  ".mongorc.js",
+  "**/.mongorc.js",
+  ".redis.conf",
+  "**/.redis.conf",
+  ".vault-token",
+  "**/.vault-token",
+  ".kube/config",
+  "**/.kube/config",
+  ".terraformrc",
+  "**/.terraformrc",
+  ".s3cfg",
+  "**/.s3cfg",
+
+  // Application-specific config files
+  "config.*",
+  "**/config.*",
+  "settings.*",
+  "**/settings.*",
+  ".config",
+  "**/.config",
+];
+
 const BLOCKED_COMMANDS: readonly string[] = Object.keys(
   BLOCKED_COMMAND_MESSAGES
 );
@@ -337,6 +427,116 @@ function checkReadOnlyFileEdit(filePath: string): void {
   }
 }
 
+// Simple glob pattern matcher
+function matchesGlob(pattern: string, str: string): boolean {
+  // Convert glob pattern to regex
+  let regexPattern = pattern
+    .replace(/[.+^${}()|[\]\\]/g, "\\$&") // Escape regex special chars
+    .replace(/\*\*/g, "(.*)") // ** matches any characters including /
+    .replace(/\*/g, "([^/]*)"); // * matches any characters except /
+
+  const regex = new RegExp(`^${regexPattern}$`);
+  return regex.test(str);
+}
+
+function checkSecretFileRead(filePath: string): void {
+  if (typeof filePath !== "string") return;
+  if (!filePath) return;
+
+  // Check the full path against glob patterns
+  for (const pattern of SECRET_FILES) {
+    if (matchesGlob(pattern, filePath)) {
+      throw new Error(
+        "`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`"
+      );
+    }
+  }
+
+  // Also check filename matches for backward compatibility
+  const fileName: string =
+    filePath.split(/[/\\]/).pop()?.split("?")[0]?.split("#")[0] || "";
+
+  for (const pattern of SECRET_FILES) {
+    if (matchesGlob(pattern, fileName)) {
+      throw new Error(
+        "`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`"
+      );
+    }
+  }
+}
+
+// Check for any secret file references in shell commands
+function checkSecretFileAccessCommand(command: string): void {
+  if (typeof command !== "string" || typeof command.trim !== "function") return;
+
+  const commandParts = command.trim().split(/\s+/);
+  const firstCommand = commandParts[0];
+
+  // Handle environment variables (VAR=value command)
+  let actualFirstCommand = firstCommand;
+  if (firstCommand.includes("=")) {
+    const afterEnv = commandParts.find((part, index) => index > 0 && !part.includes("="));
+    if (afterEnv) {
+      actualFirstCommand = afterEnv;
+    }
+  }
+
+  // Handle exec and eval wrappers
+  if (firstCommand === "exec" || firstCommand === "eval") {
+    const remainingCommand = commandParts.slice(1).join(" ");
+    return checkSecretFileAccessCommand(remainingCommand);
+  }
+
+  // Check all command arguments for secret file references
+  for (let i = 1; i < commandParts.length; i++) {
+    const arg = commandParts[i];
+
+    // Skip flags (arguments starting with -)
+    if (arg.startsWith('-')) continue;
+
+    // Check if this argument matches a secret file pattern
+    for (const pattern of SECRET_FILES) {
+      if (matchesGlob(pattern, arg)) {
+        throw new Error("`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`");
+      }
+    }
+
+    // Also check filename from path
+    const fileName = arg.split(/[/\\]/).pop()?.split("?")[0]?.split("#")[0] || "";
+    for (const pattern of SECRET_FILES) {
+      if (matchesGlob(pattern, fileName)) {
+        throw new Error("`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`");
+      }
+    }
+  }
+
+  // Also check for secret files in complex command structures
+  const complexPatterns = [
+    /\$\([^)]*\)/g, // Command substitution $(...)
+    /`[^`]*`/g,     // Backticks `...`
+    /["'][^"']*["']/g, // Quoted strings
+  ];
+
+  for (const pattern of complexPatterns) {
+    const matches = command.match(pattern);
+    if (matches) {
+      for (const match of matches) {
+        // Extract potential file paths from the match
+        const words = match.replace(/[\$\(\)`"']/g, '').split(/\s+/);
+        for (const word of words) {
+          if (word && !word.startsWith('-')) {
+            for (const secretPattern of SECRET_FILES) {
+              if (matchesGlob(secretPattern, word)) {
+                throw new Error("`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`");
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 export const CommandBlocker: Plugin = async ({
   app,
   client,
@@ -355,11 +555,17 @@ export const CommandBlocker: Plugin = async ({
         }
       }
 
+      if (input.tool === "read") {
+        const filePath = output.args.filePath || output.args.file_path;
+        checkSecretFileRead(filePath);
+      }
+
       if (input.tool === "bash") {
         const command = output.args.command;
         checkPythonNodeCommand(command);
         checkGitCommand(command);
         checkNixCommand(command);
+        checkSecretFileAccessCommand(command);
       }
     },
   };

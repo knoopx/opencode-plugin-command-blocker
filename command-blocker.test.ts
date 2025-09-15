@@ -1197,6 +1197,215 @@ describe("Command Blocker", () => {
     });
   });
 
+  describe("checkSecretFileRead", () => {
+    let plugin: any;
+    let mockApp: any;
+    let mockClient: any;
+    let mock$: any;
+
+    beforeEach(async () => {
+      mockApp = {};
+      mockClient = {};
+      mock$ = {};
+      plugin = await CommandBlocker({
+        app: mockApp,
+        client: mockClient,
+        $: mock$,
+      });
+    });
+
+    it("should block reading .env files", async () => {
+      const input1 = { tool: "read" };
+      const output1 = { args: { filePath: ".env" } };
+      await expect(
+        plugin["tool.execute.before"](input1, output1)
+      ).rejects.toThrow(
+        "`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`"
+      );
+
+      const input2 = { tool: "read" };
+      const output2 = { args: { filePath: ".envrc" } };
+      await expect(
+        plugin["tool.execute.before"](input2, output2)
+      ).rejects.toThrow(
+        "`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`"
+      );
+
+      const input3 = { tool: "read" };
+      const output3 = { args: { filePath: ".env.local" } };
+      await expect(
+        plugin["tool.execute.before"](input3, output3)
+      ).rejects.toThrow(
+        "`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`"
+      );
+    });
+
+    it("should block reading secrets files", async () => {
+      const input1 = { tool: "read" };
+      const output1 = { args: { filePath: "secrets.json" } };
+      await expect(
+        plugin["tool.execute.before"](input1, output1)
+      ).rejects.toThrow(
+        "`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`"
+      );
+
+      const input2 = { tool: "read" };
+      const output2 = { args: { filePath: "config/secrets.json" } };
+      await expect(
+        plugin["tool.execute.before"](input2, output2)
+      ).rejects.toThrow(
+        "`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`"
+      );
+
+      const input3 = { tool: "read" };
+      const output3 = { args: { filePath: ".secrets" } };
+      await expect(
+        plugin["tool.execute.before"](input3, output3)
+      ).rejects.toThrow(
+        "`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`"
+      );
+    });
+
+    it("should block reading SSH key files", async () => {
+      const input1 = { tool: "read" };
+      const output1 = { args: { filePath: ".ssh/id_rsa" } };
+      await expect(
+        plugin["tool.execute.before"](input1, output1)
+      ).rejects.toThrow(
+        "`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`"
+      );
+
+      const input2 = { tool: "read" };
+      const output2 = { args: { filePath: "id_rsa" } };
+      await expect(
+        plugin["tool.execute.before"](input2, output2)
+      ).rejects.toThrow(
+        "`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`"
+      );
+    });
+
+    it("should block reading AWS credentials", async () => {
+      const input1 = { tool: "read" };
+      const output1 = { args: { filePath: ".aws/credentials" } };
+      await expect(
+        plugin["tool.execute.before"](input1, output1)
+      ).rejects.toThrow(
+        "`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`"
+      );
+
+      const input2 = { tool: "read" };
+      const output2 = { args: { filePath: ".aws/config" } };
+      await expect(
+        plugin["tool.execute.before"](input2, output2)
+      ).rejects.toThrow(
+        "`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`"
+      );
+    });
+
+    it("should allow reading other files", async () => {
+      const input1 = { tool: "read" };
+      const output1 = { args: { filePath: "package.json" } };
+      await expect(async () => {
+        await plugin["tool.execute.before"](input1, output1);
+      }).not.toThrow();
+
+      const input2 = { tool: "read" };
+      const output2 = { args: { filePath: "src/main.ts" } };
+      await expect(async () => {
+        await plugin["tool.execute.before"](input2, output2);
+      }).not.toThrow();
+
+      const input3 = { tool: "read" };
+      const output3 = { args: { filePath: "README.md" } };
+      await expect(async () => {
+        await plugin["tool.execute.before"](input3, output3);
+      }).not.toThrow();
+    });
+
+    it("should handle empty file path", async () => {
+      const input1 = { tool: "read" };
+      const output1 = { args: { filePath: "" } };
+      await expect(async () => {
+        await plugin["tool.execute.before"](input1, output1);
+      }).not.toThrow();
+
+      const input2 = { tool: "read" };
+      const output2 = { args: { filePath: undefined } };
+      await expect(async () => {
+        await plugin["tool.execute.before"](input2, output2);
+      }).not.toThrow();
+    });
+
+    it("should handle file paths with query parameters and fragments", async () => {
+      const input1 = { tool: "read" };
+      const output1 = { args: { filePath: ".env?version=1" } };
+      await expect(
+        plugin["tool.execute.before"](input1, output1)
+      ).rejects.toThrow();
+
+      const input2 = { tool: "read" };
+      const output2 = { args: { filePath: "secrets.json#section" } };
+      await expect(
+        plugin["tool.execute.before"](input2, output2)
+      ).rejects.toThrow();
+    });
+
+    it("should block reading certificate and key files", async () => {
+      const inputs = [
+        { tool: "read", args: { filePath: "certificate.pem" } },
+        { tool: "read", args: { filePath: "private.key" } },
+        { tool: "read", args: { filePath: "server.crt" } },
+        { tool: "read", args: { filePath: "keystore.jks" } },
+        { tool: "read", args: { filePath: "config/cert.p12" } },
+      ];
+
+      for (const input of inputs) {
+        await expect(
+          plugin["tool.execute.before"]({ tool: input.tool }, { args: input.args })
+        ).rejects.toThrow(
+          "`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`"
+        );
+      }
+    });
+
+    it("should block reading authentication and token files", async () => {
+      const inputs = [
+        { tool: "read", args: { filePath: "auth.json" } },
+        { tool: "read", args: { filePath: "token.txt" } },
+        { tool: "read", args: { filePath: "passwords.yml" } },
+        { tool: "read", args: { filePath: ".npmrc" } },
+        { tool: "read", args: { filePath: ".git-credentials" } },
+        { tool: "read", args: { filePath: ".vault-token" } },
+      ];
+
+      for (const input of inputs) {
+        await expect(
+          plugin["tool.execute.before"]({ tool: input.tool }, { args: input.args })
+        ).rejects.toThrow(
+          "`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`"
+        );
+      }
+    });
+
+    it("should block reading config files that may contain secrets", async () => {
+      const inputs = [
+        { tool: "read", args: { filePath: "config.json" } },
+        { tool: "read", args: { filePath: "settings.yml" } },
+        { tool: "read", args: { filePath: ".kube/config" } },
+        { tool: "read", args: { filePath: ".docker/config.json" } },
+        { tool: "read", args: { filePath: ".terraformrc" } },
+      ];
+
+      for (const input of inputs) {
+        await expect(
+          plugin["tool.execute.before"]({ tool: input.tool }, { args: input.args })
+        ).rejects.toThrow(
+          "`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`"
+        );
+      }
+    });
+  });
+
   describe("checkTypeScriptAnyType", () => {
     let plugin: any;
     let mockApp: any;
@@ -1531,6 +1740,115 @@ describe("Command Blocker", () => {
       const hook = (plugin as PluginHook)["tool.execute.before"];
       await expect(async () => {
         await hook(input, output);
+      }).not.toThrow();
+    });
+
+    it("should block any shell commands that reference secret files", async () => {
+      const plugin = await CommandBlocker({
+        app: mockApp,
+        client: mockClient,
+        $: mock$,
+      });
+
+      const secretFileCommands = [
+        { tool: "bash", args: { command: "cat .envrc" } },
+        { tool: "bash", args: { command: "less secrets.json" } },
+        { tool: "bash", args: { command: "head .ssh/id_rsa" } },
+        { tool: "bash", args: { command: "tail .aws/credentials" } },
+        { tool: "bash", args: { command: "grep password config.json" } },
+        { tool: "bash", args: { command: "vi .npmrc" } },
+        { tool: "bash", args: { command: "vim .git-credentials" } },
+        { tool: "bash", args: { command: "nano .vault-token" } },
+        { tool: "bash", args: { command: "emacs .kube/config" } },
+        { tool: "bash", args: { command: "view certificate.pem" } },
+        { tool: "bash", args: { command: "hexdump private.key" } },
+        // Test non-file-reading commands that reference secret files
+        { tool: "bash", args: { command: "cp .envrc backup.env" } },
+        { tool: "bash", args: { command: "mv secrets.json secrets.bak" } },
+        { tool: "bash", args: { command: "rm .ssh/id_rsa" } },
+        { tool: "bash", args: { command: "chmod 600 .aws/credentials" } },
+        { tool: "bash", args: { command: "chown user .npmrc" } },
+        { tool: "bash", args: { command: "ls -la .git-credentials" } },
+        { tool: "bash", args: { command: "touch .vault-token" } },
+      ];
+
+      for (const input of secretFileCommands) {
+        await expect(
+          plugin["tool.execute.before"](input, { args: input.args })
+        ).rejects.toThrow(
+          "`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`"
+        );
+      }
+    });
+
+    it("should block shell commands with secret files in complex structures", async () => {
+      const plugin = await CommandBlocker({
+        app: mockApp,
+        client: mockClient,
+        $: mock$,
+      });
+
+      const complexCommands = [
+        { tool: "bash", args: { command: 'cat $(echo ".envrc")' } },
+        { tool: "bash", args: { command: 'less `echo secrets.json`' } },
+        { tool: "bash", args: { command: 'head ".ssh/id_rsa"' } },
+        { tool: "bash", args: { command: "grep token $HOME/.vault-token" } },
+        { tool: "bash", args: { command: 'vi ".kube/config"' } },
+      ];
+
+      for (const input of complexCommands) {
+        await expect(
+          plugin["tool.execute.before"](input, { args: input.args })
+        ).rejects.toThrow(
+          "`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`"
+        );
+      }
+    });
+
+    it("should allow shell commands that don't access secret files", async () => {
+      const plugin = await CommandBlocker({
+        app: mockApp,
+        client: mockClient,
+        $: mock$,
+      });
+
+      const safeCommands = [
+        { tool: "bash", args: { command: "cat package.json" } },
+        { tool: "bash", args: { command: "less README.md" } },
+        { tool: "bash", args: { command: "head src/main.ts" } },
+        { tool: "bash", args: { command: "tail .gitignore" } },
+        { tool: "bash", args: { command: "grep function src/" } },
+        { tool: "bash", args: { command: "vi tsconfig.json" } },
+        { tool: "bash", args: { command: "ls -la" } },
+        { tool: "bash", args: { command: "pwd" } },
+        { tool: "bash", args: { command: "echo hello" } },
+        { tool: "bash", args: { command: "mkdir .kube" } }, // Directory name, not a secret file
+      ];
+
+      for (const input of safeCommands) {
+        await expect(async () => {
+          await plugin["tool.execute.before"](input, { args: input.args });
+        }).not.toThrow();
+      }
+    });
+
+    it("should handle shell commands with flags correctly", async () => {
+      const plugin = await CommandBlocker({
+        app: mockApp,
+        client: mockClient,
+        $: mock$,
+      });
+
+      // Should block even with flags
+      const blockedCommand = { tool: "bash", args: { command: "cat -n .envrc" } };
+      await expect(
+        plugin["tool.execute.before"](blockedCommand, { args: blockedCommand.args })
+      ).rejects.toThrow();
+
+      // Should allow safe commands with flags
+      const safeCommand = { tool: "bash", args: { command: "cat -n package.json" } };
+      await expect(async () => {
+        await plugin["tool.execute.before"](safeCommand, { args: safeCommand.args });
       }).not.toThrow();
     });
 
