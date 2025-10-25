@@ -21,6 +21,8 @@ const BLOCKED_COMMAND_MESSAGES: BlockedCommandMessages = {
     "`python3` is blocked to ensure environment isolation. Use `uv` for dependency management or `uvx` for running tools. Virtual environment python3 (e.g., `.venv/bin/python3`) is allowed. Example: `uv run python3 script.py`",
   git: "`git` write operations are blocked to prevent agents from managing version control. Only read-only commands are allowed: `git status`, `git diff`, `git show`, `git log`, `git rev-parse`.",
   nix: "Local flake paths without `path:` prefix are blocked to ensure reproducible builds. Use `path:` for local flakes (includes uncommitted changes), `github:` for remote repos, or `git+https:` for git URLs. Examples: `nix run path:./my-flake#output`, `nix run github:user/repo#output`",
+  sudo: "`sudo` is blocked to prevent privilege escalation. Instruct the system administrator to perform this action on your behalf.",
+  su: "`su` is blocked to prevent privilege escalation. Instruct the system administrator to perform this action on your behalf.",
 };
 
 const READ_ONLY_FILES: ReadOnlyFiles = {
@@ -475,7 +477,9 @@ function checkSecretFileAccessCommand(command: string): void {
   // Handle environment variables (VAR=value command)
   let actualFirstCommand = firstCommand;
   if (firstCommand.includes("=")) {
-    const afterEnv = commandParts.find((part, index) => index > 0 && !part.includes("="));
+    const afterEnv = commandParts.find(
+      (part, index) => index > 0 && !part.includes("=")
+    );
     if (afterEnv) {
       actualFirstCommand = afterEnv;
     }
@@ -492,20 +496,25 @@ function checkSecretFileAccessCommand(command: string): void {
     const arg = commandParts[i];
 
     // Skip flags (arguments starting with -)
-    if (arg.startsWith('-')) continue;
+    if (arg.startsWith("-")) continue;
 
     // Check if this argument matches a secret file pattern
     for (const pattern of SECRET_FILES) {
       if (matchesGlob(pattern, arg)) {
-        throw new Error("`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`");
+        throw new Error(
+          "`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`"
+        );
       }
     }
 
     // Also check filename from path
-    const fileName = arg.split(/[/\\]/).pop()?.split("?")[0]?.split("#")[0] || "";
+    const fileName =
+      arg.split(/[/\\]/).pop()?.split("?")[0]?.split("#")[0] || "";
     for (const pattern of SECRET_FILES) {
       if (matchesGlob(pattern, fileName)) {
-        throw new Error("`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`");
+        throw new Error(
+          "`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`"
+        );
       }
     }
   }
@@ -513,7 +522,7 @@ function checkSecretFileAccessCommand(command: string): void {
   // Also check for secret files in complex command structures
   const complexPatterns = [
     /\$\([^)]*\)/g, // Command substitution $(...)
-    /`[^`]*`/g,     // Backticks `...`
+    /`[^`]*`/g, // Backticks `...`
     /["'][^"']*["']/g, // Quoted strings
   ];
 
@@ -522,17 +531,81 @@ function checkSecretFileAccessCommand(command: string): void {
     if (matches) {
       for (const match of matches) {
         // Extract potential file paths from the match
-        const words = match.replace(/[\$\(\)`"']/g, '').split(/\s+/);
+        const words = match.replace(/[\$\(\)`"']/g, "").split(/\s+/);
         for (const word of words) {
-          if (word && !word.startsWith('-')) {
+          if (word && !word.startsWith("-")) {
             for (const secretPattern of SECRET_FILES) {
               if (matchesGlob(secretPattern, word)) {
-                throw new Error("`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`");
+                throw new Error(
+                  "`Reading secret files is blocked to prevent exposure of sensitive data including API keys, credentials, and configuration.`"
+                );
               }
             }
           }
         }
       }
+    }
+  }
+}
+
+function checkPrivilegeEscalationCommand(command: string): void {
+  if (typeof command !== "string" || typeof command.trim !== "function") return;
+
+  const commandParts: string[] = command.trim().split(/\s+/);
+  const firstCommand: string = commandParts[0];
+
+  // Handle environment variables (VAR=value command)
+  let actualFirstCommand = firstCommand;
+  if (firstCommand.includes("=")) {
+    const afterEnv = commandParts.find(
+      (part, index) => index > 0 && !part.includes("=")
+    );
+    if (afterEnv) {
+      actualFirstCommand = afterEnv;
+    }
+  }
+
+  // Handle exec and eval wrappers
+  if (firstCommand === "exec" || firstCommand === "eval") {
+    const remainingCommand = commandParts.slice(1).join(" ");
+    if (remainingCommand.includes("sudo") || remainingCommand.includes("su")) {
+      throw new Error(
+        "Privilege escalation commands are blocked. Instruct the system administrator to perform this action on your behalf."
+      );
+    }
+  }
+
+  if (actualFirstCommand === "sudo" || actualFirstCommand === "su") {
+    throw new Error(BLOCKED_COMMAND_MESSAGES[actualFirstCommand]);
+  }
+
+  // Check for privilege escalation commands in complex structures
+  const privilegePatterns: RegExp[] = [
+    // In command substitution $(...)
+    /\$\([^)]*sudo[^)]*\)/g,
+    /\$\([^)]*su[^)]*\)/g,
+    // In backticks `...`
+    /`[^\`]*sudo[^\`]*`/g,
+    /`[^\`]*su[^\`]*`/g,
+    // In quoted strings within commands
+    /["'][^"']*sudo[^"']*["']/g,
+    /["'][^"']*su[^"']*["']/g,
+    // After operators like &&, ||, ;, |
+    /[;&|]{1,2}\s*sudo/g,
+    /[;&|]{1,2}\s*su/g,
+    // In background execution &
+    /sudo\s*&/g,
+    /su\s*&/g,
+    // With redirection
+    /sudo\s*[<>]/g,
+    /su\s*[<>]/g,
+  ];
+
+  for (const pattern of privilegePatterns) {
+    if (pattern.test(command)) {
+      throw new Error(
+        "Privilege escalation commands are blocked. Instruct the system administrator to perform this action on your behalf."
+      );
     }
   }
 }
@@ -566,6 +639,7 @@ export const CommandBlocker: Plugin = async ({
         checkGitCommand(command);
         checkNixCommand(command);
         checkSecretFileAccessCommand(command);
+        checkPrivilegeEscalationCommand(command);
       }
     },
   };

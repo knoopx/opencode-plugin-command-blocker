@@ -40,6 +40,13 @@ The plugin blocks various commands to promote better development practices:
   - ✅ `nix run git+https://github.com/user/repo#output`
   - ❌ `nix run ./my-flake#output`
 
+#### Privilege Escalation Commands
+
+- **`sudo`** and **`su`** - Blocked to prevent privilege escalation:
+  - ❌ `sudo apt update`
+  - ❌ `su root`
+  - **Rationale**: Agents should instruct system administrators to perform privileged operations
+
 ### File Edit Blocking
 
 #### Lock Files
@@ -103,6 +110,8 @@ pip install requests
 python script.py  # (but .venv/bin/python is allowed)
 git add .
 nix run ./my-flake#hello
+sudo apt update
+su root
 ```
 
 ## Advanced Features
@@ -156,7 +165,7 @@ This plugin enforces several development best practices:
 2. **Lock File Integrity**: Prevents manual editing of auto-generated lock files
 3. **Git Workflow**: Encourages proper git workflows by limiting write operations
 4. **Nix Best Practices**: Ensures proper flake referencing for reproducibility
-5. **Security**: Blocks potentially harmful command injection techniques
+5. **Security**: Blocks potentially harmful command injection techniques and privilege escalation attempts
 
 ## Contributing
 

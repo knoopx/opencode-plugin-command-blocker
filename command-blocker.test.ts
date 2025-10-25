@@ -1406,6 +1406,136 @@ describe("Command Blocker", () => {
     });
   });
 
+  describe("checkPrivilegeEscalationCommand", () => {
+    let plugin: any;
+    let mockApp: any;
+    let mockClient: any;
+    let mock$: any;
+
+    beforeEach(async () => {
+      mockApp = {};
+      mockClient = {};
+      mock$ = {};
+      plugin = await CommandBlocker({
+        app: mockApp,
+        client: mockClient,
+        $: mock$,
+      });
+    });
+
+    it("should block sudo command", async () => {
+      const input = { tool: "bash" };
+      const output = { args: { command: "sudo apt update" } };
+
+      await expect(
+        plugin["tool.execute.before"](input, output)
+      ).rejects.toThrow(
+        "`sudo` is blocked to prevent privilege escalation. Instruct the system administrator to perform this action on your behalf."
+      );
+    });
+
+    it("should block su command", async () => {
+      const input = { tool: "bash" };
+      const output = { args: { command: "su root" } };
+
+      await expect(
+        plugin["tool.execute.before"](input, output)
+      ).rejects.toThrow(
+        "`su` is blocked to prevent privilege escalation. Instruct the system administrator to perform this action on your behalf."
+      );
+    });
+
+    it("should block sudo in piped commands", async () => {
+      const input = { tool: "bash" };
+      const output = { args: { command: 'echo "sudo apt install" | bash' } };
+
+      await expect(
+        plugin["tool.execute.before"](input, output)
+      ).rejects.toThrow();
+    });
+
+    it("should block su in command substitution", async () => {
+      const input = { tool: "bash" };
+      const output = { args: { command: "echo $(su -c 'whoami')" } };
+
+      await expect(
+        plugin["tool.execute.before"](input, output)
+      ).rejects.toThrow();
+    });
+
+    it("should block sudo with semicolons", async () => {
+      const input = { tool: "bash" };
+      const output = { args: { command: "ls; sudo apt update" } };
+
+      await expect(
+        plugin["tool.execute.before"](input, output)
+      ).rejects.toThrow();
+    });
+
+    it("should block su with && operators", async () => {
+      const input = { tool: "bash" };
+      const output = { args: { command: 'echo "test" && su root' } };
+
+      await expect(
+        plugin["tool.execute.before"](input, output)
+      ).rejects.toThrow();
+    });
+
+    it("should block sudo with background execution", async () => {
+      const input = { tool: "bash" };
+      const output = { args: { command: "sudo apt update &" } };
+
+      await expect(
+        plugin["tool.execute.before"](input, output)
+      ).rejects.toThrow();
+    });
+
+    it("should block su with redirection", async () => {
+      const input = { tool: "bash" };
+      const output = { args: { command: "su root > output.txt" } };
+
+      await expect(
+        plugin["tool.execute.before"](input, output)
+      ).rejects.toThrow();
+    });
+
+    it("should block sudo with environment variables", async () => {
+      const input = { tool: "bash" };
+      const output = { args: { command: "SUDO_USER=root sudo apt update" } };
+
+      await expect(
+        plugin["tool.execute.before"](input, output)
+      ).rejects.toThrow();
+    });
+
+    it("should block su with eval", async () => {
+      const input = { tool: "bash" };
+      const output = { args: { command: 'eval "su -c \'whoami\'"' } };
+
+      await expect(
+        plugin["tool.execute.before"](input, output)
+      ).rejects.toThrow();
+    });
+
+    it("should block sudo with exec", async () => {
+      const input = { tool: "bash" };
+      const output = { args: { command: "exec sudo apt update" } };
+
+      await expect(
+        plugin["tool.execute.before"](input, output)
+      ).rejects.toThrow();
+    });
+
+    it("should allow non-privilege escalation commands", async () => {
+      const input = { tool: "bash" };
+      const output = { args: { command: "ls -la" } };
+
+      await expect(async () => {
+        await plugin["tool.execute.before"](input, output);
+      }).not.toThrow();
+    });
+  });
+
   describe("checkTypeScriptAnyType", () => {
     let plugin: any;
     let mockApp: any;
